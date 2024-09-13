@@ -2,17 +2,44 @@
 set -e
 eval "$($(dirname $0)/adr-config)"
 
-## usage: adr list
+## usage: adr list [SUBDIR]
 ##
-## Lists the architecture decision records
+## Lists the architecture decision records.
+##
+## If SUBDIR is provided, only list ADRs in that subdirectory.
+## If no SUBDIR is provided, list all ADRs in all subdirectories.
 
 adr_dir=$("$adr_bin_dir/_adr_dir")
 
-if [ -d $adr_dir ]
-then
-   find $adr_dir | grep -E "^$adr_dir/[0-9]+-[^/]*\\.md" | sort
-else
-    echo "The $adr_dir directory does not exist"
+if [ ! -d "$adr_dir" ]; then
+    echo "The $adr_dir directory does not exist" >&2
     exit 1
+fi
+
+# Parse arguments
+subdir=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --subdir)
+            subdir="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+
+if [[ -n "$subdir" ]]; then
+    # If a subdirectory is specified, only list ADRs in that subdirectory
+    if [ ! -d "$adr_dir/$subdir" ]; then
+        echo "The $adr_dir/$subdir directory does not exist" >&2
+        exit 1
+    fi
+    find "$adr_dir/$subdir" -name "[0-9]*.md" | sort
+else
+    # If no subdirectory is specified, list all ADRs in all subdirectories
+    find "$adr_dir" -name "[0-9]*.md" | sort
 fi
 
